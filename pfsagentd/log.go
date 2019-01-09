@@ -6,17 +6,34 @@ import (
 	"time"
 )
 
+func logFatal(err error) {
+	logf("FATAL", "%v", err)
+	os.Exit(1)
+}
+
 func logFatalf(format string, args ...interface{}) {
 	logf("FATAL", format, args...)
 	os.Exit(1)
+}
+
+func logError(err error) {
+	logf("ERROR", "%v", err)
 }
 
 func logErrorf(format string, args ...interface{}) {
 	logf("ERROR", format, args...)
 }
 
+func logWarn(err error) {
+	logf("WARN", "%v", err)
+}
+
 func logWarnf(format string, args ...interface{}) {
 	logf("WARN", format, args...)
+}
+
+func logInfo(err error) {
+	logf("INFO", "%v", err)
 }
 
 func logInfof(format string, args ...interface{}) {
