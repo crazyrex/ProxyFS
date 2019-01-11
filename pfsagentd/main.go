@@ -34,17 +34,20 @@ type configStruct struct {
 
 type globalsStruct struct {
 	sync.Mutex
-	config          configStruct
-	logFile         *os.File // == nil if configStruct.LogFilePath == ""
-	httpClient      *http.Client
-	swiftAuthToken  string
-	swiftAccountURL string // swiftStorageURL with AccountName forced to config.SwiftAccountName
+	config             configStruct
+	logFile            *os.File // == nil if configStruct.LogFilePath == ""
+	httpClient         *http.Client
+	retryDelay         []time.Duration
+	swiftAuthWaitGroup *sync.WaitGroup
+	swiftAuthToken     string
+	swiftAccountURL    string // swiftStorageURL with AccountName forced to config.SwiftAccountName
 }
 
 var globals globalsStruct
 
 func main() {
 	initializeGlobals()
+	// TODO
 }
 
 func initializeGlobals() {
@@ -55,7 +58,9 @@ func initializeGlobals() {
 		customTransport  *http.Transport
 		defaultTransport *http.Transport
 		err              error
+		nextRetryDelay   time.Duration
 		ok               bool
+		retryIndex       uint64
 	)
 
 	// Default logging related globals
@@ -127,6 +132,11 @@ func initializeGlobals() {
 	}
 
 	globals.config.SwiftRetryLimit, err = confMap.FetchOptionValueUint64("Agent", "SwiftRetryLimit")
+	if nil != err {
+		logFatal(err)
+	}
+
+	globals.config.SwiftRetryDelay, err = confMap.FetchOptionValueDuration("Agent", "SwiftRetryDelay")
 	if nil != err {
 		logFatal(err)
 	}
@@ -210,6 +220,18 @@ func initializeGlobals() {
 		Timeout:   globals.config.SwiftTimeout,
 	}
 
+	globals.retryDelay = make([]time.Duration, globals.config.SwiftRetryLimit)
+
+	nextRetryDelay = globals.config.SwiftRetryDelay
+
+	for retryIndex = 0; retryIndex < globals.config.SwiftRetryLimit; retryIndex++ {
+		globals.retryDelay[retryIndex] = nextRetryDelay
+		nextRetryDelay = time.Duration(float64(nextRetryDelay) * globals.config.SwiftRetryExpBackoff)
+	}
+
+	globals.swiftAuthWaitGroup = nil
 	globals.swiftAuthToken = ""
 	globals.swiftAccountURL = ""
+
+	updateAuthTokenAndAccountURL()
 }
