@@ -137,15 +137,21 @@ func updateAuthTokenAndAccountURL() {
 			swiftAuthToken = ""
 			swiftAccountURL = ""
 		} else {
-			swiftAuthToken = getResponse.Header.Get("X-Auth-Token")
-			swiftStorageURL = getResponse.Header.Get("X-Storage-Url")
-
-			swiftStorageAccountURLSplit = strings.Split(swiftStorageURL, "/")
-			if 0 == len(swiftStorageAccountURLSplit) {
+			if http.StatusOK != getResponse.StatusCode {
+				logWarnf("updateAuthTokenAndAccountURL() got unexpected http.Status %s (%d)", getResponse.Status, getResponse.StatusCode)
+				swiftAuthToken = ""
 				swiftAccountURL = ""
 			} else {
-				swiftStorageAccountURLSplit[len(swiftStorageAccountURLSplit)-1] = globals.config.SwiftAccountName
-				swiftAccountURL = strings.Join(swiftStorageAccountURLSplit, "/")
+				swiftAuthToken = getResponse.Header.Get("X-Auth-Token")
+				swiftStorageURL = getResponse.Header.Get("X-Storage-Url")
+
+				swiftStorageAccountURLSplit = strings.Split(swiftStorageURL, "/")
+				if 0 == len(swiftStorageAccountURLSplit) {
+					swiftAccountURL = ""
+				} else {
+					swiftStorageAccountURLSplit[len(swiftStorageAccountURLSplit)-1] = globals.config.SwiftAccountName
+					swiftAccountURL = strings.Join(swiftStorageAccountURLSplit, "/")
+				}
 			}
 		}
 	}
