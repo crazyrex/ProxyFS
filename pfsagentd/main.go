@@ -4,8 +4,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"sync"
 	"time"
+
+	"golang.org/x/sys/unix"
+
+	"bazil.org/fuse"
 
 	"github.com/swiftstack/ProxyFS/conf"
 	"github.com/swiftstack/ProxyFS/utils"
@@ -41,13 +46,27 @@ type globalsStruct struct {
 	swiftAuthWaitGroup *sync.WaitGroup
 	swiftAuthToken     string
 	swiftAccountURL    string // swiftStorageURL with AccountName forced to config.SwiftAccountName
+	fuseConn           *fuse.Conn
 }
 
 var globals globalsStruct
 
 func main() {
+	var (
+		signalChan chan os.Signal
+	)
+
 	initializeGlobals()
-	// TODO
+
+	signalChan = make(chan os.Signal, 1)
+
+	signal.Notify(signalChan, unix.SIGINT, unix.SIGTERM)
+
+	performMount()
+
+	_ = <-signalChan // Await SIGINT or SIGTERM
+
+	performUnmount()
 }
 
 func initializeGlobals() {
