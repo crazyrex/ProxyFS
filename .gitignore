@@ -13,6 +13,7 @@ dist/
 
 # Local FUSE Mount Point directories
 CommonMountPoint
+CHOMountPoint
 MountPoint0
 
 # Replay Logs

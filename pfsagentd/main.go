@@ -17,6 +17,7 @@ import (
 )
 
 type configStruct struct {
+	FUSEVolumeName          string
 	FUSEMountPointPath      string // Unless starting with '/', relative to $CWD
 	FUSEUnMountRetryDelay   time.Duration
 	FUSEUnMountRetryCap     uint64
@@ -35,6 +36,7 @@ type configStruct struct {
 	ReadPlanLineCount       uint64
 	LogFilePath             string // Unless starting with '/', relative to $CWD; == "" means disabled
 	LogToConsole            bool
+	TraceEnabled            bool
 }
 
 type globalsStruct struct {
@@ -109,6 +111,11 @@ func initializeGlobals() {
 	}
 
 	// Process resultant confMap
+
+	globals.config.FUSEVolumeName, err = confMap.FetchOptionValueString("Agent", "FUSEVolumeName")
+	if nil != err {
+		logFatal(err)
+	}
 
 	globals.config.FUSEMountPointPath, err = confMap.FetchOptionValueString("Agent", "FUSEMountPointPath")
 	if nil != err {
@@ -201,6 +208,11 @@ func initializeGlobals() {
 	}
 
 	globals.config.LogToConsole, err = confMap.FetchOptionValueBool("Agent", "LogToConsole")
+	if nil != err {
+		logFatal(err)
+	}
+
+	globals.config.TraceEnabled, err = confMap.FetchOptionValueBool("Agent", "TraceEnabled")
 	if nil != err {
 		logFatal(err)
 	}

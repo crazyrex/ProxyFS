@@ -39,14 +39,13 @@ func serveFuse() {
 		req, err = globals.fuseConn.ReadRequest()
 		if nil != err {
 			if io.EOF == err {
-				logInfof("exiting serveFuse() due to io.EOF")
+				logTracef("exiting serveFuse() due to io.EOF")
 				return
 			}
 			logErrorf("serveFuse() exiting due to err: %v", err)
 			return
 		}
-		logInfof("serveFuse() got %#v\n", req)
-		logInfof("reflect.ValueOf(req).Type() == %v", reflect.ValueOf(req).Type())
+		logTracef("serveFuse() got %v", reflect.ValueOf(req).Type())
 		switch reflect.ValueOf(req).Type() {
 		case reflect.ValueOf(&fuse.InterruptRequest{}).Type():
 			handleInterruptRequest(req.(*fuse.InterruptRequest))

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -25,8 +24,10 @@ func performMount() {
 		mountPointDevice              int64
 	)
 
-	fE := fuse.Unmount(globals.config.FUSEMountPointPath)
-	fmt.Printf("UNDO: In performMount(), fuse.Unmount(\"%s\") returned %v\n", globals.config.FUSEMountPointPath, fE)
+	err = fuse.Unmount(globals.config.FUSEMountPointPath)
+	if nil != err {
+		logTracef("pre-fuse.Unmount() in performMount() returned: %v", err)
+	}
 
 	mountPointContainingDirDevice = fetchInodeDevice("path.Dir([Agent]FUSEMountPointPath", path.Dir(globals.config.FUSEMountPointPath))
 	mountPointDevice = fetchInodeDevice("[Agent]FUSEMountPointPath", globals.config.FUSEMountPointPath)
@@ -37,7 +38,7 @@ func performMount() {
 		lazyUnmountCmd = exec.Command("fusermount", "-uz", globals.config.FUSEMountPointPath)
 		err = lazyUnmountCmd.Run()
 		if nil != err {
-			return
+			logFatal(err)
 		}
 
 		curRetryCount = 0
@@ -52,18 +53,26 @@ func performMount() {
 		}
 	}
 
-	logInfof("TODO: serve the mount point")
-
 	globals.fuseConn, err = fuse.Mount(
 		globals.config.FUSEMountPointPath,
 		fuse.AllowOther(),
 		fuse.AsyncRead(),
+		fuse.FSName(globals.config.FUSEVolumeName),
 		fuse.NoAppleDouble(),
 		fuse.NoAppleXattr(),
 		fuse.ReadOnly(),
+		fuse.VolumeName(globals.config.FUSEVolumeName),
 	)
+	if nil != err {
+		logFatal(err)
+	}
 
-	fmt.Printf("UNDO: fuse.Mount() returned %#v (err: %v)\n", globals.fuseConn, err)
+	_ = globals.fuseConn.Ready
+	if nil != globals.fuseConn.MountError {
+		logFatal(globals.fuseConn.MountError)
+	}
+
+	logInfof("%s mounted", globals.config.FUSEMountPointPath)
 
 	go serveFuse()
 }
@@ -98,9 +107,16 @@ func fetchInodeDevice(pathTitle string, path string) (inodeDevice int64) {
 }
 
 func performUnmount() {
-	logInfof("TODO: unserve the mount point")
-	fE := fuse.Unmount(globals.config.FUSEMountPointPath)
-	fmt.Printf("UNDO: In performUnmount(), fuse.Unmount(\"%s\") returned %v\n", globals.config.FUSEMountPointPath, fE)
+	var (
+		err error
+	)
+
+	err = fuse.Unmount(globals.config.FUSEMountPointPath)
+	if nil != err {
+		logFatal(err)
+	}
+
+	logInfof("%s unmounted", globals.config.FUSEMountPointPath)
 }
 
 /*
