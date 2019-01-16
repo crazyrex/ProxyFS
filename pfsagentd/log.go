@@ -42,7 +42,7 @@ func logf(level string, format string, args ...interface{}) {
 		logMsg         string
 	)
 
-	enhancedFormat = "%-30s %-5s " + format
+	enhancedFormat = "%-32s %-5s " + format
 	enhancedArgs = append([]interface{}{time.Now().Format(time.RFC3339Nano), level}, args...)
 
 	logMsg = fmt.Sprintf(enhancedFormat, enhancedArgs[:]...)

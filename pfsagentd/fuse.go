@@ -43,17 +43,21 @@ func serveFuse() {
 }
 
 func handleDestroyRequest(req *fuse.DestroyRequest) {
+	logWarnf("TODO: handleDestroyRequest()")
 	req.RespondError(fuse.ENOTSUP)
 }
 
 func handleGetattrRequest(req *fuse.GetattrRequest) {
+	logWarnf("TODO: handleGetattrRequest()")
 	req.RespondError(fuse.ENOTSUP)
 }
 
 func handleInterruptRequest(req *fuse.InterruptRequest) {
+	logWarnf("TODO: handleInterruptRequest()")
 	req.RespondError(fuse.ENOTSUP)
 }
 
 func handleStatfsRequest(req *fuse.StatfsRequest) {
+	logWarnf("TODO: handleStatfsRequest()")
 	req.RespondError(fuse.ENOTSUP)
 }
