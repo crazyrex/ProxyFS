@@ -7,26 +7,6 @@ import (
 	"bazil.org/fuse"
 )
 
-// type fuseError struct {
-// 	str   string
-// 	errno fuse.Errno
-// }
-
-// func (fE *fuseError) Errno() (errno fuse.Errno) {
-// 	return fE.errno
-// }
-
-// func (fE *fuseError) Error() string {
-// 	return fE.str
-// }
-
-// func newFuseError(err error) (fE *fuseError) {
-// 	return &fuseError{
-// 		str:   fmt.Sprintf("%v", err),
-// 		errno: fuse.Errno(blunder.Errno(err)),
-// 	}
-// }
-
 func serveFuse() {
 	var (
 		err error
@@ -47,6 +27,10 @@ func serveFuse() {
 		}
 		logTracef("serveFuse() got %v", reflect.ValueOf(req).Type())
 		switch reflect.ValueOf(req).Type() {
+		case reflect.ValueOf(&fuse.DestroyRequest{}).Type():
+			handleDestroyRequest(req.(*fuse.DestroyRequest))
+		case reflect.ValueOf(&fuse.GetattrRequest{}).Type():
+			handleGetattrRequest(req.(*fuse.GetattrRequest))
 		case reflect.ValueOf(&fuse.InterruptRequest{}).Type():
 			handleInterruptRequest(req.(*fuse.InterruptRequest))
 		case reflect.ValueOf(&fuse.StatfsRequest{}).Type():
@@ -56,6 +40,14 @@ func serveFuse() {
 			req.RespondError(fuse.ENOTSUP)
 		}
 	}
+}
+
+func handleDestroyRequest(req *fuse.DestroyRequest) {
+	req.RespondError(fuse.ENOTSUP)
+}
+
+func handleGetattrRequest(req *fuse.GetattrRequest) {
+	req.RespondError(fuse.ENOTSUP)
 }
 
 func handleInterruptRequest(req *fuse.InterruptRequest) {

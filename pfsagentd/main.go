@@ -62,11 +62,11 @@ func main() {
 
 	signalChan = make(chan os.Signal, 1)
 
-	signal.Notify(signalChan, unix.SIGINT, unix.SIGTERM)
+	signal.Notify(signalChan, unix.SIGHUP, unix.SIGINT, unix.SIGTERM)
 
 	performMount()
 
-	_ = <-signalChan // Await SIGINT or SIGTERM
+	_ = <-signalChan // Await SIGHUP, SIGINT, or SIGTERM
 
 	performUnmount()
 }
