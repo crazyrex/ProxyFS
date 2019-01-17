@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"syscall"
 	"time"
 
 	"bazil.org/fuse"
@@ -29,14 +30,20 @@ func serveFuse() {
 			return
 		}
 		logTracef("serveFuse() got %v", reflect.ValueOf(request).Type())
-		switch reflect.ValueOf(request).Type() {
-		case reflect.ValueOf(&fuse.DestroyRequest{}).Type():
+		switch request.(type) {
+		case *fuse.DestroyRequest:
 			handleDestroyRequest(request.(*fuse.DestroyRequest))
-		case reflect.ValueOf(&fuse.GetattrRequest{}).Type():
+		case *fuse.GetattrRequest:
 			handleGetattrRequest(request.(*fuse.GetattrRequest))
-		case reflect.ValueOf(&fuse.InterruptRequest{}).Type():
+		case *fuse.InitRequest:
+			handleInitRequest(request.(*fuse.InitRequest))
+		case *fuse.InterruptRequest:
 			handleInterruptRequest(request.(*fuse.InterruptRequest))
-		case reflect.ValueOf(&fuse.StatfsRequest{}).Type():
+		case *fuse.LookupRequest:
+			handleLookupRequest(request.(*fuse.LookupRequest))
+		case *fuse.OpenRequest:
+			handleOpenRequest(request.(*fuse.OpenRequest))
+		case *fuse.StatfsRequest:
 			handleStatfsRequest(request.(*fuse.StatfsRequest))
 		default:
 			logWarnf("recieved unserviced %v", reflect.ValueOf(request).Type())
@@ -63,7 +70,7 @@ func handleGetattrRequest(request *fuse.GetattrRequest) {
 	if fuse.RootID == request.Header.Node {
 		response = &fuse.GetattrResponse{
 			Attr: fuse.Attr{
-				Valid:     time.Duration(0),
+				Valid:     time.Duration(10 * time.Second),
 				Inode:     uint64(request.Header.Node),
 				Size:      uint64(0),
 				Blocks:    uint64(0),
@@ -71,13 +78,13 @@ func handleGetattrRequest(request *fuse.GetattrRequest) {
 				Mtime:     time.Now(),
 				Ctime:     time.Now(),
 				Crtime:    time.Now(),
-				Mode:      os.FileMode(0777),
+				Mode:      os.ModeDir | syscall.S_IRWXU | syscall.S_IRWXG | syscall.S_IRWXO,
 				Nlink:     uint32(2),
 				Uid:       uint32(0),
 				Gid:       uint32(0),
 				Rdev:      uint32(0),
 				Flags:     uint32(0),
-				BlockSize: uint32(0),
+				BlockSize: uint32(4096),
 			},
 		}
 		logInfof("resonding with:\n%s", utils.JSONify(response, true))
@@ -88,8 +95,44 @@ func handleGetattrRequest(request *fuse.GetattrRequest) {
 	}
 }
 
+func handleInitRequest(request *fuse.InitRequest) {
+	var (
+		response *fuse.InitResponse
+	)
+
+	logWarnf("handleInitRequest() should not have been called... fuse.Mount() supposedly took care of it")
+
+	logInfof("TODO: handleInitRequest()")
+	logInfof("Header:\n%s", utils.JSONify(request.Header, true))
+	logInfof("Payload\n%s", utils.JSONify(request, true))
+	response = &fuse.InitResponse{
+		Library:      request.Kernel,
+		MaxReadahead: request.MaxReadahead,
+		Flags:        request.Flags,
+		MaxWrite:     uint32(1024 * 1024 * 1024),
+	}
+	logInfof("resonding with:\n%s", utils.JSONify(response, true))
+	request.Respond(response)
+}
+
 func handleInterruptRequest(request *fuse.InterruptRequest) {
 	logInfof("TODO: handleInterruptRequest()")
+	logInfof("Header:\n%s", utils.JSONify(request.Header, true))
+	logInfof("Payload\n%s", utils.JSONify(request, true))
+	logInfof("Responding with fuse.ENOTSUP")
+	request.RespondError(fuse.ENOTSUP)
+}
+
+func handleLookupRequest(request *fuse.LookupRequest) {
+	logInfof("TODO: handleLookupRequest()")
+	logInfof("Header:\n%s", utils.JSONify(request.Header, true))
+	logInfof("Payload\n%s", utils.JSONify(request, true))
+	logInfof("Responding with fuse.ENOTSUP")
+	request.RespondError(fuse.ENOTSUP)
+}
+
+func handleOpenRequest(request *fuse.OpenRequest) {
+	logInfof("TODO: handleOpenRequest()")
 	logInfof("Header:\n%s", utils.JSONify(request.Header, true))
 	logInfof("Payload\n%s", utils.JSONify(request, true))
 	logInfof("Responding with fuse.ENOTSUP")
@@ -104,14 +147,14 @@ func handleStatfsRequest(request *fuse.StatfsRequest) {
 	logInfof("TODO: handleStatfsRequest()")
 	logInfof("Header:\n%s", utils.JSONify(request.Header, true))
 	response = &fuse.StatfsResponse{
-		Blocks:  uint64(0),
-		Bfree:   uint64(0),
-		Bavail:  uint64(0),
-		Files:   uint64(0),
-		Ffree:   uint64(0),
-		Bsize:   uint32(0),
-		Namelen: uint32(0),
-		Frsize:  uint32(1),
+		Blocks:  uint64(2 * 1024 * 1024 * 1024),
+		Bfree:   uint64(1024 * 1024 * 1024),
+		Bavail:  uint64(1024 * 1024 * 1024),
+		Files:   uint64(2 * 1024 * 1024),
+		Ffree:   uint64(1024 * 1024),
+		Bsize:   uint32(4096),
+		Namelen: uint32(4096),
+		Frsize:  uint32(4096),
 	}
 	logInfof("resonding with:\n%s", utils.JSONify(response, true))
 	request.Respond(response)

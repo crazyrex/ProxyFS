@@ -24,10 +24,10 @@ func performMount() {
 		mountPointDevice              int64
 	)
 
-	err = fuse.Unmount(globals.config.FUSEMountPointPath)
-	if nil != err {
-		logTracef("pre-fuse.Unmount() in performMount() returned: %v", err)
-	}
+	// err = fuse.Unmount(globals.config.FUSEMountPointPath)
+	// if nil != err {
+	// 	logTracef("pre-fuse.Unmount() in performMount() returned: %v", err)
+	// }
 
 	mountPointContainingDirDevice = fetchInodeDevice("path.Dir([Agent]FUSEMountPointPath", path.Dir(globals.config.FUSEMountPointPath))
 	mountPointDevice = fetchInodeDevice("[Agent]FUSEMountPointPath", globals.config.FUSEMountPointPath)
@@ -55,19 +55,22 @@ func performMount() {
 
 	globals.fuseConn, err = fuse.Mount(
 		globals.config.FUSEMountPointPath,
-		fuse.AllowOther(),
+		fuse.AllowRoot(), // only one of fuse.AllowOther() or fuse.AllowRoot() allowed
 		fuse.AsyncRead(),
+		fuse.DefaultPermissions(),
+		fuse.ExclCreate(),
 		fuse.FSName(globals.config.FUSEVolumeName),
 		fuse.NoAppleDouble(),
 		fuse.NoAppleXattr(),
 		fuse.ReadOnly(),
+		fuse.Subtype("ProxyFS"),
 		fuse.VolumeName(globals.config.FUSEVolumeName),
 	)
 	if nil != err {
 		logFatal(err)
 	}
 
-	_ = globals.fuseConn.Ready
+	<-globals.fuseConn.Ready
 	if nil != globals.fuseConn.MountError {
 		logFatal(globals.fuseConn.MountError)
 	}
