@@ -200,14 +200,21 @@ var loggedOutOfStatsRoom map[OpType]bool = make(map[OpType]bool)
 
 func allocateMountID(mountHandle fs.MountHandle) (mountID uint64) {
 	var (
-		ok bool
+		keepTrying bool
 	)
 
 	globals.mapsLock.Lock()
-	ok = true
-	for ok {
-		mountID = utils.FetchRandomUint64()
-		_, ok = globals.mountIDMap[mountID]
+	keepTrying = true
+	for keepTrying {
+		// TODO: Avoid need to mask off high order bit of uint64
+		//       This kludge is due to the C side of JSON-RPC decodes high order bits set into a negative int64_t currently
+		mountID = utils.FetchRandomUint64() & 0x7FFFFFFFFFFFFFFF
+		if uint64(0) == mountID {
+			// zero mountID's not allowed, so force a retry
+		} else {
+			// retry if already in globals.mountIDMap
+			_, keepTrying = globals.mountIDMap[mountID]
+		}
 	}
 	globals.mountIDMap[mountID] = mountHandle
 	globals.mapsLock.Unlock()
