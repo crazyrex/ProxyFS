@@ -13,7 +13,7 @@ import (
 )
 
 type globalsStruct struct {
-	mapsLock sync.Mutex   // protects volumeMap/mountIDMap/lastMountID/bimodalMountMap
+	mapsLock sync.Mutex   // protects volumeMap/mountIDMap/bimodalMountMap
 	gate     sync.RWMutex // API Requests RLock()/RUnlock()
 	//                       confMap changes Lock()/Unlock()
 
@@ -28,8 +28,7 @@ type globalsStruct struct {
 
 	// Map used to store volumes by ID already mounted for bimodal support
 	// TODO: These never get purged !!!
-	mountIDMap  map[uint64]fs.MountHandle // key == mountID
-	lastMountID uint64
+	mountIDMap map[uint64]fs.MountHandle // key == mountID
 
 	// Map used to store volumes by name already mounted for bimodal support
 	bimodalMountMap map[string]fs.MountHandle // key == volumeName
@@ -52,7 +51,6 @@ func init() {
 func (dummy *globalsStruct) Up(confMap conf.ConfMap) (err error) {
 	globals.volumeMap = make(map[string]bool)
 	globals.mountIDMap = make(map[uint64]fs.MountHandle)
-	globals.lastMountID = uint64(0) // The only invalid MountID
 	globals.bimodalMountMap = make(map[string]fs.MountHandle)
 
 	// Fetch IPAddr from config file

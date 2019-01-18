@@ -331,16 +331,30 @@ type MkdirPathRequest struct {
 	FileMode uint32
 }
 
-// MountRequest is the request object for RpcMount.
-type MountRequest struct {
+// MountByAccountNameRequest is the request object for RpcMountByAccountName.
+type MountByAccountNameRequest struct {
+	AccountName  string
+	MountOptions uint64
+	AuthUserID   uint64
+	AuthGroupID  uint64
+}
+
+// MountByAccountNameReply is the reply object for RpcMountByAccountName.
+type MountByAccountNameReply struct {
+	MountID            uint64
+	RootDirInodeNumber int64
+}
+
+// MountByVolumeNameRequest is the request object for RpcMountByVolumeName.
+type MountByVolumeNameRequest struct {
 	VolumeName   string
 	MountOptions uint64
 	AuthUserID   uint64
 	AuthGroupID  uint64
 }
 
-// MountReply is the reply object for RpcMount.
-type MountReply struct {
+// MountByVolumeNameReply is the reply object for RpcMountByVolumeName.
+type MountByVolumeNameReply struct {
 	MountID            uint64
 	RootDirInodeNumber int64
 }

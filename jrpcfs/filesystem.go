@@ -199,9 +199,16 @@ var saveChannelSize int = 1000
 var loggedOutOfStatsRoom map[OpType]bool = make(map[OpType]bool)
 
 func allocateMountID(mountHandle fs.MountHandle) (mountID uint64) {
+	var (
+		ok bool
+	)
+
 	globals.mapsLock.Lock()
-	globals.lastMountID++
-	mountID = globals.lastMountID
+	ok = true
+	for ok {
+		mountID = utils.FetchRandomUint64()
+		_, ok = globals.mountIDMap[mountID]
+	}
 	globals.mountIDMap[mountID] = mountHandle
 	globals.mapsLock.Unlock()
 	return
@@ -1288,7 +1295,7 @@ func (s *Server) RpcMkdirPath(in *MkdirPathRequest, reply *Reply) (err error) {
 	return
 }
 
-func (s *Server) RpcMount(in *MountRequest, reply *MountReply) (err error) {
+func (s *Server) RpcMountByAccountName(in *MountByAccountNameRequest, reply *MountByAccountNameReply) (err error) {
 	enterGate()
 	defer leaveGate()
 
@@ -1296,7 +1303,23 @@ func (s *Server) RpcMount(in *MountRequest, reply *MountReply) (err error) {
 	defer func() { flog.TraceExitErr("reply.", err, reply) }()
 	defer func() { rpcEncodeError(&err) }() // Encode error for return by RPC
 
-	mountHandle, err := fs.Mount(in.VolumeName, fs.MountOptions(in.MountOptions))
+	mountHandle, err := fs.MountByAccountName(in.AccountName, fs.MountOptions(in.MountOptions))
+	if err == nil {
+		reply.MountID = allocateMountID(mountHandle)
+		reply.RootDirInodeNumber = int64(uint64(inode.RootDirInodeNumber))
+	}
+	return
+}
+
+func (s *Server) RpcMountByVolumeName(in *MountByVolumeNameRequest, reply *MountByVolumeNameReply) (err error) {
+	enterGate()
+	defer leaveGate()
+
+	flog := logger.TraceEnter("in.", in)
+	defer func() { flog.TraceExitErr("reply.", err, reply) }()
+	defer func() { rpcEncodeError(&err) }() // Encode error for return by RPC
+
+	mountHandle, err := fs.MountByVolumeName(in.VolumeName, fs.MountOptions(in.MountOptions))
 	if err == nil {
 		reply.MountID = allocateMountID(mountHandle)
 		reply.RootDirInodeNumber = int64(uint64(inode.RootDirInodeNumber))

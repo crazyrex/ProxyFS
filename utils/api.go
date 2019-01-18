@@ -662,6 +662,25 @@ func FetchRandomBool() (randBool bool) {
 	return
 }
 
+func FetchRandomUint64() (randUint64 uint64) {
+	var (
+		err         error
+		randByteBuf []byte
+	)
+
+	randByteBuf = make([]byte, 8)
+
+	_, err = rand.Read(randByteBuf)
+	if nil != err {
+		err = fmt.Errorf("rand.Read(randByteBuf) failed: %v", err)
+		panic(err)
+	}
+
+	randUint64 = binary.LittleEndian.Uint64(randByteBuf)
+
+	return
+}
+
 func JSONify(input interface{}, indentify bool) (output string) {
 	var (
 		err             error
