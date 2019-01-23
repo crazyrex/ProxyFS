@@ -393,7 +393,7 @@ func main() {
 
 			// If we are doing the operations on the same file for all threads, create the file now.
 			if doSameFile {
-				// Save off MountID and FileInodeNumber in rwSizeEach since all threads need this
+				// Save off MountHandle and FileInodeNumber in rwSizeEach since all threads need this
 				err, rwSizeEach.MountHandle, rwSizeEach.FileInodeNumber, fileName = createFsFile()
 				if nil != err {
 					// In an error, no point in continuing.  Just break from this for loop.

@@ -645,38 +645,40 @@ func (p *Profiler) Dump() {
 
 func FetchRandomBool() (randBool bool) {
 	var (
-		err         error
-		randByteBuf []byte
+		randByteSlice []byte
 	)
 
-	randByteBuf = make([]byte, 1)
+	randByteSlice = FetchRandomByteSlice(1)
 
-	_, err = rand.Read(randByteBuf)
-	if nil != err {
-		err = fmt.Errorf("rand.Read(randByteBuf) failed: %v", err)
-		panic(err)
-	}
-
-	randBool = (randByteBuf[0] < 0x80)
+	randBool = (randByteSlice[0] < 0x80)
 
 	return
 }
 
 func FetchRandomUint64() (randUint64 uint64) {
 	var (
-		err         error
-		randByteBuf []byte
+		randByteSlice []byte
 	)
 
-	randByteBuf = make([]byte, 8)
+	randByteSlice = FetchRandomByteSlice(8)
 
-	_, err = rand.Read(randByteBuf)
+	randUint64 = binary.LittleEndian.Uint64(randByteSlice)
+
+	return
+}
+
+func FetchRandomByteSlice(len int) (randByteSlice []byte) {
+	var (
+		err error
+	)
+
+	randByteSlice = make([]byte, len)
+
+	_, err = rand.Read(randByteSlice)
 	if nil != err {
-		err = fmt.Errorf("rand.Read(randByteBuf) failed: %v", err)
+		err = fmt.Errorf("rand.Read(randByteSlice) failed: %v", err)
 		panic(err)
 	}
-
-	randUint64 = binary.LittleEndian.Uint64(randByteBuf)
 
 	return
 }

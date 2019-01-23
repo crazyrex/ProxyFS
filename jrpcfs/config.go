@@ -28,7 +28,8 @@ type globalsStruct struct {
 
 	// Map used to store volumes by ID already mounted for bimodal support
 	// TODO: These never get purged !!!
-	mountIDMap map[uint64]fs.MountHandle // key == mountID
+	mountIDAsByteSliceMap map[MountIDAsByteSlice]fs.MountHandle
+	mountIDAsStringMap    map[MountIDAsString]fs.MountHandle
 
 	// Map used to store volumes by name already mounted for bimodal support
 	bimodalMountMap map[string]fs.MountHandle // key == volumeName
@@ -50,7 +51,8 @@ func init() {
 
 func (dummy *globalsStruct) Up(confMap conf.ConfMap) (err error) {
 	globals.volumeMap = make(map[string]bool)
-	globals.mountIDMap = make(map[uint64]fs.MountHandle)
+	globals.mountIDAsByteSliceMap = make(map[MountIDAsByteSlice]fs.MountHandle)
+	globals.mountIDAsStringMap = make(map[MountIDAsString]fs.MountHandle)
 	globals.bimodalMountMap = make(map[string]fs.MountHandle)
 
 	// Fetch IPAddr from config file
@@ -133,22 +135,35 @@ func (dummy *globalsStruct) ServeVolume(confMap conf.ConfMap, volumeName string)
 
 func (dummy *globalsStruct) UnserveVolume(confMap conf.ConfMap, volumeName string) (err error) {
 	var (
-		mountHandle        fs.MountHandle
-		mountID            uint64
-		removedMountID     uint64
-		removedMountIDList []uint64
+		mountHandle                    fs.MountHandle
+		mountIDAsByteSlice             MountIDAsByteSlice
+		mountIDAsString                MountIDAsString
+		toRemoveMountIDAsByteSliceList []MountIDAsByteSlice
+		toRemoveMountIDAsStringList    []MountIDAsString
 	)
 
-	removedMountIDList = make([]uint64, 0, len(globals.mountIDMap))
+	toRemoveMountIDAsByteSliceList = make([]MountIDAsByteSlice, 0, len(globals.mountIDAsByteSliceMap))
 
-	for mountID, mountHandle = range globals.mountIDMap {
+	for mountIDAsByteSlice, mountHandle = range globals.mountIDAsByteSliceMap {
 		if mountHandle.VolumeName() == volumeName {
-			removedMountIDList = append(removedMountIDList, mountID)
+			toRemoveMountIDAsByteSliceList = append(toRemoveMountIDAsByteSliceList, mountIDAsByteSlice)
 		}
 	}
 
-	for _, removedMountID = range removedMountIDList {
-		delete(globals.mountIDMap, removedMountID)
+	for _, mountIDAsByteSlice = range toRemoveMountIDAsByteSliceList {
+		delete(globals.mountIDAsByteSliceMap, mountIDAsByteSlice)
+	}
+
+	toRemoveMountIDAsStringList = make([]MountIDAsString, 0, len(globals.mountIDAsStringMap))
+
+	for mountIDAsString, mountHandle = range globals.mountIDAsStringMap {
+		if mountHandle.VolumeName() == volumeName {
+			toRemoveMountIDAsStringList = append(toRemoveMountIDAsStringList, mountIDAsString)
+		}
+	}
+
+	for _, mountIDAsString = range toRemoveMountIDAsStringList {
+		delete(globals.mountIDAsStringMap, mountIDAsString)
 	}
 
 	delete(globals.volumeMap, volumeName)
@@ -174,15 +189,19 @@ func (dummy *globalsStruct) SignaledFinish(confMap conf.ConfMap) (err error) {
 
 func (dummy *globalsStruct) Down(confMap conf.ConfMap) (err error) {
 	if 0 != len(globals.volumeMap) {
-		err = fmt.Errorf("jrpcfs.Down() called with 0 != len(globals.volumeMap")
+		err = fmt.Errorf("jrpcfs.Down() called with 0 != len(globals.volumeMap)")
 		return
 	}
-	if 0 != len(globals.mountIDMap) {
-		err = fmt.Errorf("jrpcfs.Down() called with 0 != len(globals.mountIDMap")
+	if 0 != len(globals.mountIDAsByteSliceMap) {
+		err = fmt.Errorf("jrpcfs.Down() called with 0 != len(globals.mountIDAsByteSliceMap)")
+		return
+	}
+	if 0 != len(globals.mountIDAsStringMap) {
+		err = fmt.Errorf("jrpcfs.Down() called with 0 != len(globals.mountIDAsStringMap)")
 		return
 	}
 	if 0 != len(globals.bimodalMountMap) {
-		err = fmt.Errorf("jrpcfs.Down() called with 0 != len(globals.bimodalMountMap")
+		err = fmt.Errorf("jrpcfs.Down() called with 0 != len(globals.bimodalMountMap)")
 		return
 	}
 
